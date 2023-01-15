@@ -84,20 +84,21 @@ SSD1306Wire  factory_display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, 
  */
 
 void setup(){
-	Serial.begin(115200);
-	factory_display.init();
-	factory_display.clear();
+  Serial.begin(115200);
+  factory_display.init();
+  factory_display.clear();
   pinMode(LED, OUTPUT);
-	digitalWrite(LED, HIGH); 
+  digitalWrite(LED, HIGH); 
   delay(1000);
 
-	lora_init();
-	packet = "waiting lora data!";
+  lora_init();
+  packet = "waiting lora data!";
   factory_display.drawString(0, 10, packet);
   factory_display.display();
   delay(100);
+ 
   factory_display.clear();
-	digitalWrite(LED, LOW);  
+  digitalWrite(LED, LOW);  
 }
 
 void loop(){
