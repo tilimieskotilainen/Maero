@@ -1,5 +1,5 @@
 /*
- *  Initial test code for Maero, sending side
+ *  Initial test code for Maero, receiving side
  *  
  *  Adapted from code by Aaron.Lee from HelTec AutoMation, ChengDu, China
  *  https://github.com/HelTecAutomation/Heltec_ESP32
@@ -40,7 +40,11 @@
 
 #define RX_TIMEOUT_VALUE                            1000
 #define BUFFER_SIZE                                 30 // Define the payload size here
+/********************************* lora  *********************************************/
 
+/*
+ * Variables
+ */
 char txpacket[BUFFER_SIZE];
 char rxpacket[BUFFER_SIZE];
 
@@ -51,9 +55,9 @@ bool sleepMode = false;   //lora_idle
 int16_t Rssi,rxSize;      // rssi,rxSize;
 String packet ;
 
- /*
-  * Methods
-  */
+/*
+ * Methods
+ */
 
 void lora_init(void){
   Mcu.begin();
@@ -61,27 +65,23 @@ void lora_init(void){
   Rssi=0;
   RadioEvents.RxDone = OnRxDone;
 
-  Radio.Init( &RadioEvents );
-  Radio.SetChannel( RF_FREQUENCY );
+  Radio.Init(&RadioEvents);
+  Radio.SetChannel(RF_FREQUENCY);
   Radio.SetRxConfig( MODEM_LORA, LORA_BANDWIDTH, LORA_SPREADING_FACTOR,
                                  LORA_CODINGRATE, 0, LORA_PREAMBLE_LENGTH,
                                  LORA_SYMBOL_TIMEOUT, LORA_FIX_LENGTH_PAYLOAD_ON,
                                  0, true, 0, 0, LORA_IQ_INVERSION_ON, true );
 }
 
-
-/********************************* lora  *********************************************/
-
-
- /*
-  * OLED screen
-  */
+/*
+ * OLED screen
+ */
 
 SSD1306Wire  factory_display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, RST_OLED); // addr , freq , i2c group , resolution , rst
 
- /*
-  * Setup and loop
-  */
+/*
+ * Setup and loop
+ */
 
 void setup(){
 	Serial.begin(115200);
@@ -126,7 +126,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr){
   factory_display.drawString(0, 30, "RSSI: "+(String)Rssi + "length " + (String)rxSize);
   factory_display.drawString(0, 40, "waiting for next packet");
   factory_display.display();
-  Serial.printf("\r\nreceived packet \"%s\" with Rssi %d , length %d\r\n",rxpacket,Rssi,rxSize);
+  Serial.printf("\r\nReceived packet \"%s\" with Rssi %d , length %d\r\n",rxpacket,Rssi,rxSize);
   digitalWrite(LED, HIGH);  
   delay(2000);
   sleepMode = true;
