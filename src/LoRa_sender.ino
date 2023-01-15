@@ -1,7 +1,8 @@
 /*
  *  Initial test code for Maero, sending side
- *
- *
+ * 
+ *  Adapted from code by Aaron.Lee from HelTec AutoMation, ChengDu, China
+ *  https://github.com/HelTecAutomation/Heltec_ESP32
  */
  
 /*
@@ -15,7 +16,7 @@
 
 /********************************* lora  *********************************************/
 
-#define RF_FREQUENCY                                915000000 // Hz
+#define RF_FREQUENCY                                868000000 // Hz
 
 #define TX_OUTPUT_POWER                             5        // dBm
 
@@ -61,10 +62,10 @@ void OnTxTimeout(void);
 
 void lora_init(void){
   Mcu.begin();
-	txNumber = 0;
+  txNumber = 0;
   RadioEvents.TxDone = OnTxDone;
   RadioEvents.TxTimeout = OnTxTimeout;
-  Radio.Init( &RadioEvents );
+  Radio.Init(&RadioEvents);
   Radio.SetChannel(RF_FREQUENCY);
   Radio.SetTxConfig(MODEM_LORA, TX_OUTPUT_POWER, 0, LORA_BANDWIDTH,
                                    LORA_SPREADING_FACTOR, LORA_CODINGRATE,
@@ -80,48 +81,48 @@ SSD1306Wire  factory_display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, 
 
 
 void setup(){
-    Serial.begin(115200);
-  	Serial.begin(115200);
-    factory_display.init();
-    factory_display.clear();
-    pinMode(LED, OUTPUT);
-    digitalWrite(LED, HIGH); 
-    delay(1000);
+  Serial.begin(115200);
+  factory_display.init();
+  factory_display.clear();
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, HIGH); 
+  delay(1000);
 
-    lora_init();
-    factory_display.drawString(0, 10, "Preparing to send lora");
-    factory_display.display();
-    delay(1000);
-    factory_display.clear();
-    digitalWrite(LED, LOW);  
- }
+  lora_init();
+  factory_display.drawString(0, 10, "Preparing to send lora");
+  factory_display.display();
+  delay(1000);
+	
+  factory_display.clear();
+  digitalWrite(LED, LOW);  
+}
 
 void loop(){
-	if(lora_idle == true)	{
+  if(lora_idle == true){
     delay(2000);
-		txNumber += 0.01;
-		sprintf(txpacket,"Test packet number %0.2f",txNumber);  //start a package
+    txNumber += 0.01;
+    sprintf(txpacket,"Test packet number %0.2f",txNumber);  //start a package
    
-		Serial.printf("\r\nsending packet \"%s\" , length %d\r\n",txpacket, strlen(txpacket));
+    Serial.printf("\r\nSending packet \"%s\" , length %d\r\n",txpacket, strlen(txpacket));
     digitalWrite(LED, HIGH); 
     factory_display.clear();
     factory_display.drawString(0, 10, "Sending packet");
     factory_display.display();
     
-		Radio.Send((uint8_t *)txpacket, strlen(txpacket)); //send the package out	
+    Radio.Send((uint8_t *)txpacket, strlen(txpacket)); //send the package out	
     lora_idle = false;
     digitalWrite(LED, LOW); 
-	}
+  }
   Radio.IrqProcess( );
 }
 
 void OnTxDone(void){
-	Serial.println("TX done......");
-	lora_idle = true;
+  Serial.println("TX done......");
+  lora_idle = true;
 }
 
 void OnTxTimeout(void){
-    Radio.Sleep( );
-    Serial.println("TX Timeout......");
-    lora_idle = true;
+  Radio.Sleep( );
+  Serial.println("TX Timeout......");
+  lora_idle = true;
 }
