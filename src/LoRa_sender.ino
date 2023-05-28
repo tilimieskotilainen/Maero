@@ -14,11 +14,13 @@
 #include <Wire.h>  
 #include "HT_SSD1306Wire.h"
 
+#include "DHT.h"
+
 /********************************* lora  *********************************************/
 
 #define RF_FREQUENCY                                868000000 // Hz
 
-#define TX_OUTPUT_POWER                             5        // dBm
+#define TX_OUTPUT_POWER                             14        // dBm
 
 #define LORA_BANDWIDTH                              0         // [0: 125 kHz,
                                                               //  1: 250 kHz,
@@ -40,6 +42,12 @@
 
 /********************************* lora  *********************************************/
 
+
+/************** AM2302 ********************/
+#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321¨
+#define DHTPIN 46
+DHT dht(DHTPIN, DHTTYPE);
+
  /*
   * Variables
   */
@@ -47,12 +55,14 @@
 char txpacket[BUFFER_SIZE];
 char rxpacket[BUFFER_SIZE];
 
-double txNumber;
+static RadioEvents_t RadioEvents;
 
+//double txNumber;
+unsigned int txNumber;
 bool lora_idle = true;
 String packet;
 
-static RadioEvents_t RadioEvents;
+
 void OnTxDone(void);
 void OnTxTimeout(void);
 
@@ -79,6 +89,9 @@ void lora_init(void){
 
 SSD1306Wire  factory_display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, RST_OLED); // addr , freq , i2c group , resolution , rst
 
+ /*
+  * Setup and loop
+  */
 
 void setup(){
   Serial.begin(115200);
@@ -86,10 +99,22 @@ void setup(){
   factory_display.clear();
   pinMode(LED, OUTPUT);
   digitalWrite(LED, HIGH); 
-  delay(1000);
+    delay(1000);
 
   lora_init();
-  factory_display.drawString(0, 10, "Preparing to send lora");
+  
+  // AM2302 
+  dht.begin();
+  float temperatureC = dht.readTemperature();
+  float humidity = dht.readHumidity();
+  Serial.print("Sensor: ");
+  Serial.print(temperatureC);
+  Serial.print ("°C ");
+  Serial.print(humidity);
+  Serial.println("%");
+
+  factory_display.drawString(0, 0, "Preparing to send LoRa message");
+  factory_display.drawString(0, 10, "" + String(temperatureC, 1) + " °C " + String(humidity, 1) + " %");
   factory_display.display();
   delay(1000);
 	
@@ -99,21 +124,34 @@ void setup(){
 
 void loop(){
   if(lora_idle == true){
-    delay(2000);
-    txNumber += 0.01;
-    sprintf(txpacket,"Test packet number %0.2f",txNumber);  //start a package
-   
+    delay(5000);
+    //txNumber += 0.01;
+    txNumber += 1;
+    //sprintf(txpacket,"Test packet number %0.2f",txNumber);  //start a package
+
+    // AM2302 LISÄYS
+    float temperatureC = dht.readTemperature();
+    float humidity = dht.readHumidity();
+    Serial.print("Sensor: ");
+    Serial.print(temperatureC);
+    Serial.print ("°C ");
+    Serial.print(humidity);
+    Serial.println("%");
+    
+    sprintf(txpacket,"%0.1f %0.1f%",temperatureC, humidity);  //start a package
     Serial.printf("\r\nSending packet \"%s\" , length %d\r\n",txpacket, strlen(txpacket));
     digitalWrite(LED, HIGH); 
     factory_display.clear();
-    factory_display.drawString(0, 10, "Sending packet");
+    factory_display.drawString(0, 0, "Sending packet " + String(txNumber) +".");
+    // DALLAS LISÄYS
+    factory_display.drawString(0, 10, "" + String(temperatureC, 1) + "°C " + String(humidity, 1) + "%");
     factory_display.display();
     
     Radio.Send((uint8_t *)txpacket, strlen(txpacket)); //send the package out	
     lora_idle = false;
     digitalWrite(LED, LOW); 
   }
-  Radio.IrqProcess( );
+  Radio.IrqProcess();
 }
 
 void OnTxDone(void){
